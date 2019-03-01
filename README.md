@@ -28,12 +28,56 @@ We can set references to undefined when model destroyed, but currently there is 
 
 
 So, basically, my vision of domain layer of mobx application is:
-1. `Model`. Just like mst `types.model` with identifier, but with ES classes (classy-mst is good library which shows how it can be made).  Just like in mst, Model fields should be divided on main, serializable fields and volatile ones. mst `types.model` and django-orm syntax are good how-to examples.
+1. `Model`. Just like mst `types.model` with identifier, but with ES classes (classy-mst is good library which shows how it can be made).  Just like in mst, Model fields should be divided on main, serializable fields and volatile ones. mst `types` and django-orm syntax are good how-to examples.
 ```ts
 class Todo extends Model {
+    id = fields.id() //required field type for Model class, name can be changed, string by default
     title = fields.string()
-    checked = fields.boolean()
+    description = fields.mayBe(fields.string()) //undefined or string
+    done = fields.boolean()
     
-    loading = false
+    author = fields.model(User) //reference to some User model in current Domain
+    participants = fields.set(fields.model(User)) //set of references to User models in current Domain
+    
+    tags = fields.array(fields.string()) //array of strings
+    
+    syncNow = false //non-serializable field
+    @onDestroy _ = reaction(() => this.$snapshot, snap => {
+        this.syncNow = true
+        sendToServer(snap).then(() => this.syncNow = false)
+    })
+}
+
+class User extends Model {
+    id = fields.id(fields.number()) //number id
+    name = fields.string()
 }
 ```
+2. `Collection<Todo>` - set of `Model`. `OrderedCollection<Todo>` - array of `Model`. Can be used directly in `Domain` or inherited (in this case it cannot contains `fields` entires, but can use plain class fieds, since collection should be serializable easily):
+```ts
+class Todos extends OrderedCollection<Todo> {
+    loading = false //fields.boolean() is forbidden here
+    
+    get completed() {
+        return this.filter(t => t.done)
+    }
+}
+```
+3. `Domain` - contains collections, fields
+
+Records
+External refs
+Domain replacing
+Default collections
+
+Interdomains copy
+
+Model creation
+Lifecycle
+Snapshots (pre-post processing)
+Environment
+Actions
+Computed
+Reactions
+Flows babel plugin
+DI?
