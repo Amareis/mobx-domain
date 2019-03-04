@@ -66,6 +66,8 @@ class Todos extends OrderedCollection<Todo> {
 3. `Domain` - contains collections, fields
 
 Records
+Services
+
 External refs
 Domain replacing
 Default collections
